@@ -6,6 +6,14 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		8F54740F2EA127A8000F7D74 /* AppsFlyerLib in Frameworks */ = {isa = PBXBuildFile; productRef = 8F54740E2EA127A8000F7D74 /* AppsFlyerLib */; };
+		8F5474122EA127CD000F7D74 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 8F5474112EA127CD000F7D74 /* FirebaseAnalytics */; };
+		8F5474142EA127CD000F7D74 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 8F5474132EA127CD000F7D74 /* FirebaseMessaging */; };
+		8F5474202EA12942000F7D74 /* NotificationServiceExtensionApp.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 8F5474192EA12942000F7D74 /* NotificationServiceExtensionApp.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		8F5474282EA1295C000F7D74 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 8F5474272EA1295C000F7D74 /* FirebaseMessaging */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		8F0A5FD62E913A8F00D9D970 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -21,12 +29,34 @@
 			remoteGlobalIDString = 8F0A5FC62E913A8D00D9D970;
 			remoteInfo = ChickRemind;
 		};
+		8F54741E2EA12942000F7D74 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8F0A5FBF2E913A8D00D9D970 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 8F5474182EA12942000F7D74;
+			remoteInfo = NotificationServiceExtensionApp;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		8F5474252EA12942000F7D74 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				8F5474202EA12942000F7D74 /* NotificationServiceExtensionApp.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		8F0A5FC72E913A8D00D9D970 /* ChickRemind.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ChickRemind.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8F0A5FD52E913A8F00D9D970 /* ChickRemindTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ChickRemindTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		8F0A5FDF2E913A8F00D9D970 /* ChickRemindUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ChickRemindUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		8F5474192EA12942000F7D74 /* NotificationServiceExtensionApp.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = NotificationServiceExtensionApp.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -36,6 +66,13 @@
 				Info.plist,
 			);
 			target = 8F0A5FC62E913A8D00D9D970 /* ChickRemind */;
+		};
+		8F5474242EA12942000F7D74 /* Exceptions for "NotificationServiceExtensionApp" folder in "NotificationServiceExtensionApp" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 8F5474182EA12942000F7D74 /* NotificationServiceExtensionApp */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -58,6 +95,14 @@
 			path = ChickRemindUITests;
 			sourceTree = "<group>";
 		};
+		8F54741A2EA12942000F7D74 /* NotificationServiceExtensionApp */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				8F5474242EA12942000F7D74 /* Exceptions for "NotificationServiceExtensionApp" folder in "NotificationServiceExtensionApp" target */,
+			);
+			path = NotificationServiceExtensionApp;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -65,6 +110,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8F5474142EA127CD000F7D74 /* FirebaseMessaging in Frameworks */,
+				8F5474122EA127CD000F7D74 /* FirebaseAnalytics in Frameworks */,
+				8F54740F2EA127A8000F7D74 /* AppsFlyerLib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -82,6 +130,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		8F5474162EA12942000F7D74 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8F5474282EA1295C000F7D74 /* FirebaseMessaging in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -91,6 +147,8 @@
 				8F0A5FC92E913A8D00D9D970 /* ChickRemind */,
 				8F0A5FD82E913A8F00D9D970 /* ChickRemindTests */,
 				8F0A5FE22E913A8F00D9D970 /* ChickRemindUITests */,
+				8F54741A2EA12942000F7D74 /* NotificationServiceExtensionApp */,
+				8F5474262EA1295C000F7D74 /* Frameworks */,
 				8F0A5FC82E913A8D00D9D970 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -101,8 +159,16 @@
 				8F0A5FC72E913A8D00D9D970 /* ChickRemind.app */,
 				8F0A5FD52E913A8F00D9D970 /* ChickRemindTests.xctest */,
 				8F0A5FDF2E913A8F00D9D970 /* ChickRemindUITests.xctest */,
+				8F5474192EA12942000F7D74 /* NotificationServiceExtensionApp.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		8F5474262EA1295C000F7D74 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -115,16 +181,21 @@
 				8F0A5FC32E913A8D00D9D970 /* Sources */,
 				8F0A5FC42E913A8D00D9D970 /* Frameworks */,
 				8F0A5FC52E913A8D00D9D970 /* Resources */,
+				8F5474252EA12942000F7D74 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				8F54741F2EA12942000F7D74 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				8F0A5FC92E913A8D00D9D970 /* ChickRemind */,
 			);
 			name = ChickRemind;
 			packageProductDependencies = (
+				8F54740E2EA127A8000F7D74 /* AppsFlyerLib */,
+				8F5474112EA127CD000F7D74 /* FirebaseAnalytics */,
+				8F5474132EA127CD000F7D74 /* FirebaseMessaging */,
 			);
 			productName = ChickRemind;
 			productReference = 8F0A5FC72E913A8D00D9D970 /* ChickRemind.app */;
@@ -176,6 +247,29 @@
 			productReference = 8F0A5FDF2E913A8F00D9D970 /* ChickRemindUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		8F5474182EA12942000F7D74 /* NotificationServiceExtensionApp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8F5474212EA12942000F7D74 /* Build configuration list for PBXNativeTarget "NotificationServiceExtensionApp" */;
+			buildPhases = (
+				8F5474152EA12942000F7D74 /* Sources */,
+				8F5474162EA12942000F7D74 /* Frameworks */,
+				8F5474172EA12942000F7D74 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				8F54741A2EA12942000F7D74 /* NotificationServiceExtensionApp */,
+			);
+			name = NotificationServiceExtensionApp;
+			packageProductDependencies = (
+				8F5474272EA1295C000F7D74 /* FirebaseMessaging */,
+			);
+			productName = NotificationServiceExtensionApp;
+			productReference = 8F5474192EA12942000F7D74 /* NotificationServiceExtensionApp.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -197,6 +291,9 @@
 						CreatedOnToolsVersion = 16.4;
 						TestTargetID = 8F0A5FC62E913A8D00D9D970;
 					};
+					8F5474182EA12942000F7D74 = {
+						CreatedOnToolsVersion = 16.4;
+					};
 				};
 			};
 			buildConfigurationList = 8F0A5FC22E913A8D00D9D970 /* Build configuration list for PBXProject "ChickRemind" */;
@@ -208,6 +305,10 @@
 			);
 			mainGroup = 8F0A5FBE2E913A8D00D9D970;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				8F54740D2EA127A8000F7D74 /* XCRemoteSwiftPackageReference "AppsFlyerFramework" */,
+				8F5474102EA127CD000F7D74 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 8F0A5FC82E913A8D00D9D970 /* Products */;
 			projectDirPath = "";
@@ -216,6 +317,7 @@
 				8F0A5FC62E913A8D00D9D970 /* ChickRemind */,
 				8F0A5FD42E913A8F00D9D970 /* ChickRemindTests */,
 				8F0A5FDE2E913A8F00D9D970 /* ChickRemindUITests */,
+				8F5474182EA12942000F7D74 /* NotificationServiceExtensionApp */,
 			);
 		};
 /* End PBXProject section */
@@ -236,6 +338,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		8F0A5FDD2E913A8F00D9D970 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8F5474172EA12942000F7D74 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -266,6 +375,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		8F5474152EA12942000F7D74 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -278,6 +394,11 @@
 			isa = PBXTargetDependency;
 			target = 8F0A5FC62E913A8D00D9D970 /* ChickRemind */;
 			targetProxy = 8F0A5FE02E913A8F00D9D970 /* PBXContainerItemProxy */;
+		};
+		8F54741F2EA12942000F7D74 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 8F5474182EA12942000F7D74 /* NotificationServiceExtensionApp */;
+			targetProxy = 8F54741E2EA12942000F7D74 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -404,10 +525,13 @@
 				CODE_SIGN_ENTITLEMENTS = ChickRemind/ChickRemind.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ChickRemind/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Chick Remind";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Allow to this app use your camera.";
+				INFOPLIST_KEY_NSUserTrackingUsageDescription = "We use your device identifier to deliver a more personalized experience, show relevant content, and improve app performance. Your data is secure and never shared with third parties for tracking outside this app.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -444,10 +568,13 @@
 				CODE_SIGN_ENTITLEMENTS = ChickRemind/ChickRemind.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ChickRemind/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Chick Remind";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Allow to this app use your camera.";
+				INFOPLIST_KEY_NSUserTrackingUsageDescription = "We use your device identifier to deliver a more personalized experience, show relevant content, and improve app performance. Your data is secure and never shared with third parties for tracking outside this app.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -562,6 +689,69 @@
 			};
 			name = Release;
 		};
+		8F5474222EA12942000F7D74 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = NotificationServiceExtensionApp/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = NotificationServiceExtensionApp;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.reminderschick.ChickRemind.NotificationServiceExtensionApp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		8F5474232EA12942000F7D74 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = NotificationServiceExtensionApp/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = NotificationServiceExtensionApp;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.reminderschick.ChickRemind.NotificationServiceExtensionApp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -601,7 +791,58 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		8F5474212EA12942000F7D74 /* Build configuration list for PBXNativeTarget "NotificationServiceExtensionApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8F5474222EA12942000F7D74 /* Debug */,
+				8F5474232EA12942000F7D74 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		8F54740D2EA127A8000F7D74 /* XCRemoteSwiftPackageReference "AppsFlyerFramework" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/AppsFlyerSDK/AppsFlyerFramework";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 6.17.7;
+			};
+		};
+		8F5474102EA127CD000F7D74 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.4.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		8F54740E2EA127A8000F7D74 /* AppsFlyerLib */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8F54740D2EA127A8000F7D74 /* XCRemoteSwiftPackageReference "AppsFlyerFramework" */;
+			productName = AppsFlyerLib;
+		};
+		8F5474112EA127CD000F7D74 /* FirebaseAnalytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8F5474102EA127CD000F7D74 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalytics;
+		};
+		8F5474132EA127CD000F7D74 /* FirebaseMessaging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8F5474102EA127CD000F7D74 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseMessaging;
+		};
+		8F5474272EA1295C000F7D74 /* FirebaseMessaging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8F5474102EA127CD000F7D74 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseMessaging;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 8F0A5FBF2E913A8D00D9D970 /* Project object */;
 }

